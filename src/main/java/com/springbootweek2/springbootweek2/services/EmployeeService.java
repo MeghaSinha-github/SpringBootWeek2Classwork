@@ -3,6 +3,7 @@ package com.springbootweek2.springbootweek2.services;
 
 import com.springbootweek2.springbootweek2.dto.EmployeeDTO;
 import com.springbootweek2.springbootweek2.entities.EmployeeEntity;
+import com.springbootweek2.springbootweek2.exceptions.ResourceNotFoundException;
 import com.springbootweek2.springbootweek2.repositories.EmployeeRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.util.ReflectionUtils;
@@ -48,6 +49,7 @@ public class EmployeeService {
     }
 
     public EmployeeDTO updateEmployeeById(EmployeeDTO employeeDTO,Long id) {
+        isExistsByEmployeeId(id);
         EmployeeEntity employeeEntity=modelMapper.map(employeeDTO,EmployeeEntity.class);
         employeeEntity.setId(id);
         EmployeeEntity savedEmployee=employeeRepository.save(employeeEntity);
@@ -55,16 +57,14 @@ public class EmployeeService {
     }
 
     public boolean deleteEmployeeById(Long id) {
-        boolean exists=isExistsByEmployeeId(id);
-        if(!exists) return false;
+        isExistsByEmployeeId(id);
         employeeRepository.deleteById(id);
         return true;
     }
     
     public EmployeeDTO updatePartialEmployeeById( Map<String,Object> updates, Long id)
     {
-        boolean exists= isExistsByEmployeeId(id);
-        if(!exists) return null;
+        isExistsByEmployeeId(id);
         EmployeeEntity employeeEntity= employeeRepository.findById(id).get();
         updates.forEach((field, value)->{
             Field fieldToBeUpdated= ReflectionUtils.findRequiredField(EmployeeEntity.class, field);
@@ -74,7 +74,8 @@ public class EmployeeService {
         return modelMapper.map(employeeRepository.save(employeeEntity), EmployeeDTO.class);
     }
 
-    private boolean isExistsByEmployeeId(Long employeeId) {
-        return employeeRepository.existsById(employeeId);
+    private void isExistsByEmployeeId(Long id) {
+        boolean exists= employeeRepository.existsById(id);
+        if(!exists) throw new ResourceNotFoundException("Employee not found with id " +id);
     }
 }
